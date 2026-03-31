@@ -2,7 +2,7 @@
   "name": "Kharcha — Expense Tracker",
   "short_name": "Kharcha",
   "description": "Personal monthly food expense tracker",
-  "start_url": "/",
+  "start_url": "/kharcha/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
