@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Kharcha" />
+  <meta name="description" content="Personal monthly expense tracker" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>Kharcha</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #273348;
+      --border: rgba(255,255,255,0.08);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --dim: #475569;
+      --green: #22c55e;
+      --green-soft: rgba(34,197,94,0.12);
+      --amber: #f59e0b;
+      --amber-soft: rgba(245,158,11,0.12);
+      --red: #ef4444;
+      --red-soft: rgba(239,68,68,0.12);
+      --orange: #f97316;
+      --orange-soft: rgba(249,115,22,0.12);
+      --blue: #3b82f6;
+      --blue-soft: rgba(59,130,246,0.12);
+      --safe: 0px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      overscroll-behavior: none;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 430px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      padding: 52px 20px 16px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .header-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header-month {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .settings-btn {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    /* ── Scroll area ── */
+    .scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 16px 24px;
+    }
+
+    /* ── Balance card ── */
+    .balance-card {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e293b 100%);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(59,130,246,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .balance-card::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(59,130,246,0.15);
+    }
+    .balance-lbl { font-size: 11px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .balance-amount { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 700; line-height: 1; margin-bottom: 12px; }
+    .balance-row { display: flex; gap: 16px; }
+    .balance-mini { flex: 1; }
+    .balance-mini .lbl { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
+    .balance-mini .val { font-size: 14px; font-weight: 500; }
+    .progress-track { height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-top: 14px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+    /* ── Stats row ── */
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .stat-card { background: var(--surface); border-radius: 14px; padding: 14px; border: 1px solid var(--border); }
+    .stat-card .lbl { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .stat-card .val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 600; }
+
+    /* ── Log buttons ── */
+    .log-section { margin-bottom: 16px; }
+    .log-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .meal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .meal-btn {
+      padding: 16px 12px;
+      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .meal-btn .icon { font-size: 24px; }
+    .meal-btn:active { transform: scale(0.96); }
+    .meal-btn.active-hostel { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+    .meal-btn.active-outside { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+
+    .input-group { display: flex; gap: 8px; margin-bottom: 8px; }
+    .amount-wrap { flex: 1; position: relative; }
+    .rupee { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
+    .input-group input {
+      width: 100%; padding: 12px 12px 12px 26px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      outline: none;
+    }
+    .input-group input:focus { border-color: var(--blue); }
+    .note-input {
+      width: 100%; padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .note-input::placeholder, .input-group input::placeholder { color: var(--dim); }
+    .note-input:focus { border-color: var(--blue); }
+    .log-btn {
+      width: 100%; padding: 14px;
+      border-radius: 14px;
+      border: none;
+      background: var(--blue);
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.01em;
+    }
+    .log-btn:active { transform: scale(0.98); background: #2563eb; }
+    .log-btn:disabled { opacity: 0.4; }
+
+    /* ── Heatmap ── */
+    .heatmap-section { margin-bottom: 16px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .section-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .wd-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+    .wd-lbl { text-align: center; font-size: 9px; color: var(--dim); }
+    .heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .day-cell {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.1s;
+      border: 1px solid transparent;
+      position: relative;
+    }
+    .day-cell:active { transform: scale(0.9); }
+    .day-cell .dn { font-size: 10px; line-height: 1; }
+    .day-cell .da { font-size: 8px; margin-top: 1px; opacity: 0.8; }
+    .dc-empty { background: var(--surface); color: var(--dim); }
+    .dc-hostel { background: rgba(34,197,94,0.18); color: var(--green); border-color: rgba(34,197,94,0.3); }
+    .dc-low { background: rgba(234,179,8,0.18); color: #eab308; border-color: rgba(234,179,8,0.3); }
+    .dc-mid { background: rgba(249,115,22,0.18); color: var(--orange); border-color: rgba(249,115,22,0.3); }
+    .dc-high { background: rgba(239,68,68,0.18); color: var(--red); border-color: rgba(239,68,68,0.3); }
+    .dc-future { background: var(--surface); color: var(--dim); opacity: 0.3; cursor: default; }
+    .dc-today { box-shadow: 0 0 0 2px var(--blue); }
+    .legend { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+    /* ── History ── */
+    .history-section { margin-bottom: 24px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+      border: 1px solid var(--border);
+    }
+    .history-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .hi-hostel { background: var(--green-soft); }
+    .hi-outside { background: var(--red-soft); }
+    .history-info { flex: 1; min-width: 0; }
+    .history-desc { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .history-amt { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600; flex-shrink: 0; }
+    .amt-hostel { color: var(--green); }
+    .amt-outside { color: var(--red); }
+    .empty-state { text-align: center; padding: 32px 16px; color: var(--dim); font-size: 14px; }
+    .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+    /* ── Settings sheet ── */
+    .sheet-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 50;
+      display: flex; align-items: flex-end;
+      backdrop-filter: blur(2px);
+    }
+    .sheet {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px 40px;
+      width: 100%; max-width: 430px;
+      margin: 0 auto;
+      border-top: 1px solid var(--border);
+    }
+    .sheet-handle { width: 40px; height: 4px; background: var(--dim); border-radius: 2px; margin: 0 auto 20px; }
+    .sheet-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+    .field-lbl { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .field-input {
+      width: 100%; padding: 13px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      outline: none;
+      margin-bottom: 16px;
+    }
+    .field-input:focus { border-color: var(--blue); }
+    .sheet-save {
+      width: 100%; padding: 14px;
+      border-radius: 14px; border: none;
+      background: var(--blue); color: #fff;
+      font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600;
+      cursor: pointer;
+    }
+    .danger-zone { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .danger-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .reset-btn {
+      width: 100%; padding: 13px;
+      border-radius: 14px; border: 1px solid rgba(239,68,68,0.3);
+      background: var(--red-soft); color: var(--red);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* ── Day detail sheet ── */
+    .day-entry { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .day-entry:last-child { border-bottom: none; }
+    .del-btn { width: 28px; height: 28px; border-radius: 8px; background: var(--red-soft); border: none; color: var(--red); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 10px 20px; border-radius: 50px;
+      font-size: 13px; font-weight: 500;
+      opacity: 0; transition: all 0.25s; z-index: 100; white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div>
+      <div class="header-title">Kharcha 💸</div>
+      <div class="header-month" id="headerMonth"></div>
+    </div>
+    <div class="settings-btn" onclick="openSettings()">⚙️</div>
+  </div>
+
+  <div class="scroll">
+    <!-- Balance Card -->
+    <div class="balance-card">
+      <div class="balance-lbl">Balance remaining</div>
+      <div class="balance-amount" id="balanceAmt">₹0</div>
+      <div class="balance-row">
+        <div class="balance-mini">
+          <div class="lbl">Budget</div>
+          <div class="val" id="budgetDisp">₹0</div>
+        </div>
+        <div class="balance-mini">
+          <div class="lbl">Spent</div>
+          <div class="val" id="spentDisp">₹0</div>
+        </div>
+        <div class="balance-mini">
+          <div class="lbl">Days left</div>
+          <div class="val" id="daysLeftDisp">0</div>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="lbl">🏠 Hostel days</div>
+        <div class="val" id="hostelCount" style="color:var(--green);">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">🍽 Outside days</div>
+        <div class="val" id="outsideCount" style="color:var(--red);">0</div>
+      </div>
+    </div>
+
+    <!-- Log section -->
+    <div class="log-section">
+      <div class="log-title">Log today's meal</div>
+      <div class="meal-btns">
+        <button class="meal-btn" id="btnHostel" onclick="selectType('hostel')">
+          <span class="icon">🏠</span>
+          <span>Hostel food</span>
+        </button>
+        <button class="meal-btn" id="btnOutside" onclick="selectType('outside')">
+          <span class="icon">🍽️</span>
+          <span>Ate outside</span>
+        </button>
+      </div>
+      <div id="amountGroup" class="input-group hidden">
+        <div class="amount-wrap">
+          <span class="rupee">₹</span>
+          <input type="number" id="amountInput" placeholder="Amount spent" inputmode="decimal" min="0" step="10" />
+        </div>
+      </div>
+      <input type="text" id="noteInput" class="note-input hidden" placeholder="Note — e.g. Vada pav at FC Road" maxlength="60" />
+      <button class="log-btn" id="logBtn" onclick="logEntry()" disabled>Log meal</button>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="heatmap-section">
+      <div class="section-header">
+        <div class="section-title">Monthly view</div>
+      </div>
+      <div class="wd-row">
+        <div class="wd-lbl">Su</div><div class="wd-lbl">Mo</div><div class="wd-lbl">Tu</div>
+        <div class="wd-lbl">We</div><div class="wd-lbl">Th</div><div class="wd-lbl">Fr</div><div class="wd-lbl">Sa</div>
+      </div>
+      <div class="heatmap-grid" id="heatmapGrid"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(34,197,94,0.4)"></div>Hostel</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(234,179,8,0.4)"></div>Low</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(249,115,22,0.4)"></div>Mid</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.4)"></div>High</div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="history-section">
+      <div class="section-header">
+        <div class="section-title">Recent entries</div>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings sheet -->
+<div class="sheet-overlay hidden" id="settingsSheet" onclick="closeSheetOnBg(event,'settingsSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Settings</div>
+    <div class="field-lbl">Monthly budget (₹)</div>
+    <input type="number" class="field-input" id="budgetField" placeholder="10000" inputmode="decimal" />
+    <div class="field-lbl">Your name (optional)</div>
+    <input type="text" class="field-input" id="nameField" placeholder="Sam" maxlength="20" />
+    <button class="sheet-save" onclick="saveSettings()">Save settings</button>
+    <div class="danger-zone">
+      <div class="danger-title">Danger zone</div>
+      <button class="reset-btn" onclick="resetMonth()">Reset this month's data</button>
+    </div>
+  </div>
+</div>
+
+<!-- Day detail sheet -->
+<div class="sheet-overlay hidden" id="daySheet" onclick="closeSheetOnBg(event,'daySheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="daySheetTitle">Day details</div>
+    <div id="daySheetContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY = 'kharcha_v2';
+let state = JSON.parse(localStorage.getItem(KEY) || 'null') || { budget: 10000, name: '', entries: {} };
+let selType = null;
+
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+function fmt(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function toKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayKey() { return toKey(new Date()); }
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function selectType(type) {
+  selType = type;
+  document.getElementById('btnHostel').className = 'meal-btn' + (type==='hostel'?' active-hostel':'');
+  document.getElementById('btnOutside').className = 'meal-btn' + (type==='outside'?' active-outside':'');
+  const outside = type === 'outside';
+  document.getElementById('amountGroup').classList.toggle('hidden', !outside);
+  document.getElementById('noteInput').classList.remove('hidden');
+  document.getElementById('logBtn').disabled = false;
+  if (outside) setTimeout(() => document.getElementById('amountInput').focus(), 50);
+}
+
+function logEntry() {
+  if (!selType) return;
+  const key = todayKey();
+  let amount = 0;
+  if (selType === 'outside') {
+    amount = parseFloat(document.getElementById('amountInput').value) || 0;
+    if (amount <= 0) { toast('Enter the amount spent 💰'); return; }
+  }
+  const note = document.getElementById('noteInput').value.trim();
+  if (!state.entries[key]) state.entries[key] = [];
+  const now = new Date();
+  state.entries[key].push({ type: selType, amount, note, time: now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) });
+  save();
+  resetForm();
+  render();
+  toast(selType === 'hostel' ? '🏠 Hostel meal logged! Saving money 💚' : '🍽 Outside meal logged');
+}
+
+function resetForm() {
+  selType = null;
+  document.getElementById('btnHostel').className = 'meal-btn';
+  document.getElementById('btnOutside').className = 'meal-btn';
+  document.getElementById('amountGroup').classList.add('hidden');
+  document.getElementById('noteInput').classList.add('hidden');
+  document.getElementById('amountInput').value = '';
+  document.getElementById('noteInput').value = '';
+  document.getElementById('logBtn').disabled = true;
+}
+
+function getTotalSpent() {
+  return Object.values(state.entries).flat().reduce((s,e)=>s+(e.amount||0),0);
+}
+
+function render() {
+  const now = new Date();
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('headerMonth').textContent = months[now.getMonth()] + ' ' + now.getFullYear();
+
+  const spent = getTotalSpent();
+  const balance = state.budget - spent;
+  const pct = Math.min(100, Math.round((spent/state.budget)*100));
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const daysLeft = daysInMonth - now.getDate();
+
+  document.getElementById('balanceAmt').textContent = fmt(balance);
+  document.getElementById('budgetDisp').textContent = fmt(state.budget);
+  document.getElementById('spentDisp').textContent = fmt(spent);
+  document.getElementById('daysLeftDisp').textContent = daysLeft;
+
+  const fill = document.getElementById('progressFill');
+  fill.style.width = pct+'%';
+  fill.style.background = pct<50 ? '#22c55e' : pct<75 ? '#f59e0b' : '#ef4444';
+
+  let hostelDays=0, outsideDays=0;
+  Object.values(state.entries).forEach(arr => {
+    if (arr.some(e=>e.type==='hostel')) hostelDays++;
+    if (arr.some(e=>e.type==='outside')) outsideDays++;
+  });
+  document.getElementById('hostelCount').textContent = hostelDays;
+  document.getElementById('outsideCount').textContent = outsideDays;
+
+  renderHeatmap(now, daysInMonth);
+  renderHistory();
+}
+
+function renderHeatmap(now, daysInMonth) {
+  const year = now.getFullYear(), month = now.getMonth(), today = now.getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  const dailyBudget = state.budget / daysInMonth;
+  const grid = document.getElementById('heatmapGrid');
+  grid.innerHTML = '';
+
+  for (let i=0;i<firstDay;i++) {
+    const b = document.createElement('div');
+    b.className = 'day-cell';
+    grid.appendChild(b);
+  }
+
+  for (let d=1;d<=daysInMonth;d++) {
+    const key = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+    const entries = state.entries[key]||[];
+    const total = entries.reduce((s,e)=>s+(e.amount||0),0);
+    const hasHostel = entries.some(e=>e.type==='hostel');
+    const hasOutside = entries.some(e=>e.type==='outside');
+
+    if (d > today) {
+      cell.classList.add('dc-future');
+    } else if (!entries.length) {
+      cell.classList.add('dc-empty');
+    } else if (hasOutside) {
+      cell.classList.add(total < dailyBudget*0.4 ? 'dc-low' : total < dailyBudget*0.8 ? 'dc-mid' : 'dc-high');
+    } else {
+      cell.classList.add('dc-hostel');
+    }
+    if (d===today) cell.classList.add('dc-today');
+
+    cell.innerHTML = '<span class="dn">'+d+'</span>'+(total>0?'<span class="da">'+Math.round(total)+'</span>':'');
+    if (d<=today) cell.onclick = ()=>showDay(key,d,month,year);
+    grid.appendChild(cell);
+  }
+}
+
+function renderHistory() {
+  const all = [];
+  Object.entries(state.entries).forEach(([k,arr])=>arr.forEach((e,i)=>all.push({...e,key:k,idx:i})));
+  all.reverse();
+  const container = document.getElementById('historyList');
+  if (!all.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🍱</div>No entries yet.<br>Start logging your meals!</div>';
+    return;
+  }
+  container.innerHTML = all.slice(0,25).map(e => {
+    const parts = e.key.split('-');
+    const dateStr = parts[2]+'/'+parts[1];
+    const desc = e.note || (e.type==='hostel' ? 'Hostel food' : 'Outside food');
+    return `<div class="history-item">
+      <div class="history-icon ${e.type==='hostel'?'hi-hostel':'hi-outside'}">${e.type==='hostel'?'🏠':'🍽️'}</div>
+      <div class="history-info">
+        <div class="history-desc">${desc}</div>
+        <div class="history-meta">${dateStr}${e.time?' · '+e.time:''}</div>
+      </div>
+      <div class="history-amt ${e.type==='hostel'?'amt-hostel':'amt-outside'}">${e.amount?'-'+fmt(e.amount):'Free'}</div>
+    </div>`;
+  }).join('');
+}
+
+function showDay(key, day, month, year) {
+  const entries = state.entries[key]||[];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('daySheetTitle').textContent = day+' '+months[month]+' '+year;
+  const total = entries.reduce((s,e)=>s+(e.amount||0),0);
+  let html = '';
+  if (!entries.length) {
+    html = '<p style="color:var(--muted);font-size:14px;padding:12px 0;">No entries for this day.</p>';
+  } else {
+    html = entries.map((e,i)=>`
+      <div class="day-entry">
+        <span style="font-size:18px;">${e.type==='hostel'?'🏠':'🍽️'}</span>
+        <div style="flex:1;padding:0 10px;">
+          <div style="font-size:14px;font-weight:500;">${e.note||(e.type==='hostel'?'Hostel food':'Outside food')}</div>
+          ${e.time?`<div style="font-size:11px;color:var(--muted);">${e.time}</div>`:''}
+        </div>
+        <span style="font-size:14px;font-weight:600;color:${e.type==='hostel'?'var(--green)':'var(--red)'};">${e.amount?'-'+fmt(e.amount):'Free'}</span>
+        <button class="del-btn" style="margin-left:8px;" onclick="deleteEntry('${key}',${i})">✕</button>
+      </div>`).join('');
+    if (total>0) html += `<div style="padding:12px 0 0;font-size:14px;font-weight:500;color:var(--muted);">Total: <span style="color:var(--red);">${fmt(total)}</span></div>`;
+  }
+  document.getElementById('daySheetContent').innerHTML = html;
+  document.getElementById('daySheet').classList.remove('hidden');
+}
+
+function deleteEntry(key, idx) {
+  state.entries[key].splice(idx,1);
+  if (!state.entries[key].length) delete state.entries[key];
+  save(); render();
+  document.getElementById('daySheet').classList.add('hidden');
+  toast('Entry deleted');
+}
+
+function openSettings() {
+  document.getElementById('budgetField').value = state.budget;
+  document.getElementById('nameField').value = state.name||'';
+  document.getElementById('settingsSheet').classList.remove('hidden');
+}
+
+function saveSettings() {
+  const b = parseInt(document.getElementById('budgetField').value);
+  if (!isNaN(b) && b>0) state.budget = b;
+  state.name = document.getElementById('nameField').value.trim();
+  save(); render();
+  document.getElementById('settingsSheet').classList.add('hidden');
+  toast('Settings saved ✓');
+}
+
+function resetMonth() {
+  if (confirm('Reset all entries for this month? This cannot be undone.')) {
+    state.entries = {};
+    save(); render();
+    document.getElementById('settingsSheet').classList.add('hidden');
+    toast('Month reset ✓');
+  }
+}
+
+function closeSheetOnBg(e, id) {
+  if (e.target === document.getElementById(id)) document.getElementById(id).classList.add('hidden');
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+render();
+</script>
+</body>
+</html>
