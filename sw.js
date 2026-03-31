@@ -1,5 +1,5 @@
 const CACHE = 'kharcha-v1';
-const ASSETS = ['/', '/index.html', '/manifest.json'];
+const ASSETS = ['/kharcha/', '/kharcha/index.html', '/kharcha/manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
